@@ -1,0 +1,53 @@
+{
+    "name": "rushphp/support",
+    "description": "Shared helpers for RUSH - Registry-driven Unified Shell Helper. Filesystem primitives and operator identity.",
+    "type": "library",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "RUSHphp",
+            "homepage": "https://github.com/rushphp"
+        }
+    ],
+    "keywords": [
+        "rush",
+        "cli",
+        "shell",
+        "support",
+        "filesystem",
+        "operator",
+        "automation"
+    ],
+    "support": {
+        "issues": "https://github.com/rushphp/support/issues",
+        "source": "https://github.com/rushphp/support"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rush\\Support\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2",
+        "pestphp/pest": "^3.8"
+    },
+    "scripts": {
+        "stan": "phpstan analyse",
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

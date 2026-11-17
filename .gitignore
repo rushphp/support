@@ -1,0 +1,35 @@
+# Composer
+/vendor/
+composer.lock
+
+# PHPUnit / Pest
+.phpunit.result.cache
+.phpunit.cache/
+.pest/
+
+# PHPStan
+/.phpstan/
+
+# Coverage
+/coverage/
+/build/
+
+# Environment
+.env
+env.json
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# OpenCode
+.opencode/
+.agents/
+opencode.json
+
+!.gitkeep
