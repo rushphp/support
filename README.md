@@ -10,6 +10,8 @@
 
 Shared helpers used by the RUSH manager and its tools. No runtime dependencies.
 
+> **Pre-1.0:** minor releases may include breaking changes.
+
 ## ✨ Features
 
 - **`FileSystem`**: safe directory creation, atomic writes, recursive copy/delete.

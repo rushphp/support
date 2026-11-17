@@ -11,6 +11,8 @@
 Helpers compartilhados usados pelo manager do RUSH e suas tools. Sem
 dependências de runtime.
 
+> **Pré-1.0:** releases minor podem incluir mudanças incompatíveis.
+
 ## ✨ Recursos
 
 - **`FileSystem`**: criação segura de diretórios, escrita atômica e cópia/remoção recursiva.
