@@ -6,7 +6,7 @@ use JsonException;
 use RuntimeException;
 
 
-final class OperatorFile
+class OperatorFile
 {
     public static function path(string $projectRoot): string
     {
@@ -16,7 +16,7 @@ final class OperatorFile
 
     public static function exists(string $projectRoot): bool
     {
-        return is_file(self::path($projectRoot));
+        return static::doIsFile(self::path($projectRoot));
     }
 
 
@@ -24,11 +24,11 @@ final class OperatorFile
     {
         $file = self::path($projectRoot);
 
-        if ( ! is_file($file) || ! is_readable($file)) {
+        if ( ! static::doIsFile($file) || ! static::doIsReadable($file)) {
             return null;
         }
 
-        $raw = file_get_contents($file);
+        $raw = static::doFileGetContents($file);
 
         if ($raw === false) {
             return null;
@@ -57,7 +57,7 @@ final class OperatorFile
 
     public static function load(string $projectRoot): Operator
     {
-        $operator = self::read($projectRoot);
+        $operator = static::read($projectRoot);
 
         if ($operator === null) {
             throw new RuntimeException(
@@ -80,6 +80,30 @@ final class OperatorFile
             throw new RuntimeException('could not encode operator: '. $exception->getMessage(), 0, $exception);
         }
 
-        FileSystem::write(self::path($projectRoot), $json, 0600);
+        static::doWrite(self::path($projectRoot), $json, 0600);
+    }
+
+
+    protected static function doIsFile(string $path): bool
+    {
+        return is_file($path);
+    }
+
+
+    protected static function doIsReadable(string $path): bool
+    {
+        return is_readable($path);
+    }
+
+
+    protected static function doFileGetContents(string $file): string|false
+    {
+        return file_get_contents($file);
+    }
+
+
+    protected static function doWrite(string $path, string $contents, int $mode): void
+    {
+        FileSystem::write($path, $contents, $mode);
     }
 }

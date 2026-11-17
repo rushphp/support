@@ -3,6 +3,11 @@
 use Rush\Support\FileSystem;
 use Rush\Support\Operator;
 use Rush\Support\OperatorFile;
+use Tests\Fixtures\OperatorFileTestable;
+
+beforeEach(function (): void {
+    OperatorFileTestable::reset();
+});
 
 test('saves, reads and loads the operator identity', function (): void {
     $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
@@ -44,4 +49,71 @@ test('read returns null for an invalid email', function (): void {
         ->and(OperatorFile::exists($root))->toBeTrue();
 
     FileSystem::removeDir($root);
+});
+
+
+test('read returns null when the file is missing', function (): void {
+    OperatorFileTestable::$file = false;
+
+    expect(OperatorFileTestable::read('/virtual'))->toBeNull();
+});
+
+
+test('read returns null when the file is not readable', function (): void {
+    OperatorFileTestable::$file = true;
+    OperatorFileTestable::$readable = false;
+
+    expect(OperatorFileTestable::read('/virtual'))->toBeNull();
+});
+
+
+test('read returns null for invalid json', function (): void {
+    OperatorFileTestable::$file = true;
+    OperatorFileTestable::$contents = 'not-json';
+
+    expect(OperatorFileTestable::read('/virtual'))->toBeNull();
+});
+
+
+test('read returns null for an invalid payload', function (): void {
+    OperatorFileTestable::$file = true;
+    OperatorFileTestable::$contents = json_encode([
+        'name' => 'Developer',
+        'email' => 'not-an-email',
+    ]);
+
+    expect(OperatorFileTestable::read('/virtual'))->toBeNull();
+});
+
+
+test('read returns an operator for a valid payload', function (): void {
+    OperatorFileTestable::$file = true;
+    OperatorFileTestable::$contents = json_encode([
+        'name' => 'Developer',
+        'email' => 'developer@example.com',
+    ]);
+
+    expect(OperatorFileTestable::read('/virtual')?->toArray())->toBe([
+        'name' => 'Developer',
+        'email' => 'developer@example.com',
+    ]);
+});
+
+
+test('load throws when the testable file is missing', function (): void {
+    OperatorFileTestable::$file = false;
+
+    expect(fn () => OperatorFileTestable::load('/virtual'))
+        ->toThrow(RuntimeException::class, 'operator not configured');
+});
+
+
+test('exists reflects the file probe', function (): void {
+    OperatorFileTestable::$file = true;
+
+    expect(OperatorFileTestable::exists('/virtual'))->toBeTrue();
+
+    OperatorFileTestable::$file = false;
+
+    expect(OperatorFileTestable::exists('/virtual'))->toBeFalse();
 });
