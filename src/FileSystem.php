@@ -24,7 +24,11 @@ class FileSystem
         }
 
         try {
-            static::guard(static fn () => static::doMkdir($path, $mode));
+            $created = static::guard(static fn () => static::doMkdir($path, $mode));
+
+            if ($created !== true) {
+                throw new RuntimeException("could not create directory: {$path}");
+            }
         } catch (Throwable $error) {
             if (static::doIsDir($path)) {
                 return;
@@ -46,7 +50,12 @@ class FileSystem
         }
 
         try {
-            static::guard(static fn () => static::doFilePutContents($temporary, $contents));
+            $written = static::guard(static fn () => static::doFilePutContents($temporary, $contents));
+
+            if ($written === false) {
+                throw new RuntimeException("could not write file: {$path}");
+            }
+
             static::chmod($temporary, $mode);
 
             if ( ! static::guard(static fn () => static::doRename($temporary, $path))) {
@@ -74,10 +83,13 @@ class FileSystem
 
 
     /**
-     * @param list<string> $excludeTop
+     * @param list<string> $exclude
      */
-    public static function copyDir(string $source, string $destination, array $excludeTop = []): void
+    public static function copyDir(string $source, string $destination, array $exclude = []): void
     {
+        $source = rtrim($source, '/') ?: '/';
+        $destination = rtrim($destination, '/');
+
         if ( ! static::doIsDir($source)) {
             throw new RuntimeException("missing directory: {$source}");
         }
@@ -94,15 +106,13 @@ class FileSystem
                 continue;
             }
 
-            $relative = substr($item->getPathname(), strlen($source) + 1);
+            $relative = str_replace('\\', '/', substr($item->getPathname(), strlen($source) + 1));
 
             if ($relative === '') {
                 continue;
             }
 
-            $top = explode(DIRECTORY_SEPARATOR, $relative)[0];
-
-            if (in_array($top, $excludeTop, true)) {
+            if (self::isExcluded($relative, $exclude)) {
                 continue;
             }
 
@@ -120,6 +130,31 @@ class FileSystem
     }
 
 
+    /** @param list<string> $exclude */
+    private static function isExcluded(string $relative, array $exclude): bool
+    {
+        $top = explode('/', $relative)[0];
+
+        foreach ($exclude as $item) {
+            $item = trim($item, '/');
+
+            if ($item === '') {
+                continue;
+            }
+
+            if ($item === $relative || str_starts_with($relative, $item .'/')) {
+                return true;
+            }
+
+            if ( ! str_contains($item, '/') && $item === $top) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
     public static function removeDir(string $directory): void
     {
         if ( ! static::doIsDir($directory)) {
@@ -132,7 +167,15 @@ class FileSystem
         );
 
         foreach ($iterator as $item) {
-            if ( ! $item instanceof SplFileInfo || $item->isLink()) {
+            if ( ! $item instanceof SplFileInfo) {
+                continue;
+            }
+
+            if ($item->isLink()) {
+                if ( ! static::guard(static fn () => static::doUnlink($item->getPathname()))) {
+                    throw new RuntimeException("could not remove link {$item->getPathname()}");
+                }
+
                 continue;
             }
 

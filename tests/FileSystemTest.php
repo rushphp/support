@@ -85,9 +85,63 @@ test('ensureDirectory rejects a path that exists but is not a directory', functi
 test('ensureDirectory reports a mkdir failure', function (): void {
     FileSystemTestable::$isDir = false;
     FileSystemTestable::$fileExists = false;
+    FileSystemTestable::$mkdirThrows = true;
 
     expect(fn () => FileSystemTestable::ensureDirectory('/virtual'))
         ->toThrow(RuntimeException::class, 'could not create directory');
 
     expect(FileSystemTestable::$mkdirCalls)->toBe(1);
+});
+
+
+test('ensureDirectory reports a false mkdir result', function (): void {
+    FileSystemTestable::$isDir = false;
+    FileSystemTestable::$fileExists = false;
+    FileSystemTestable::$mkdirResult = false;
+
+    expect(fn () => FileSystemTestable::ensureDirectory('/virtual'))
+        ->toThrow(RuntimeException::class, 'could not create directory');
+
+    expect(FileSystemTestable::$mkdirCalls)->toBe(1);
+});
+
+
+test('write reports a failed write', function (): void {
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$filePutContentsResult = false;
+
+    expect(fn () => FileSystemTestable::write('/virtual/file.txt', 'x'))
+        ->toThrow(RuntimeException::class, 'could not write file');
+});
+
+
+test('copy dir excludes nested paths and accepts a trailing slash', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    $source = $root .'/source';
+    $destination = $root .'/destination';
+
+    mkdir($source .'/keep/nested', 0700, true);
+    mkdir($source .'/keep/other', 0700, true);
+    file_put_contents($source .'/keep/nested/skip.txt', 'skip');
+    file_put_contents($source .'/keep/other/keep.txt', 'keep');
+
+    FileSystem::copyDir($source .'/', $destination, ['keep/nested']);
+
+    expect(is_file($destination .'/keep/nested/skip.txt'))->toBeFalse()
+        ->and(file_get_contents($destination .'/keep/other/keep.txt'))->toBe('keep');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('remove dir removes internal symlinks', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+
+    mkdir($root .'/target', 0700, true);
+    symlink($root .'/target', $root .'/link');
+
+    FileSystem::removeDir($root);
+
+    expect(file_exists($root))->toBeFalse()
+        ->and(is_link($root .'/link'))->toBeFalse();
 });

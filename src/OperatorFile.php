@@ -16,13 +16,13 @@ class OperatorFile
 
     public static function exists(string $projectRoot): bool
     {
-        return static::doIsFile(self::path($projectRoot));
+        return static::doIsFile(static::path($projectRoot));
     }
 
 
     public static function read(string $projectRoot): ?Operator
     {
-        $file = self::path($projectRoot);
+        $file = static::path($projectRoot);
 
         if ( ! static::doIsFile($file) || ! static::doIsReadable($file)) {
             return null;
@@ -80,7 +80,7 @@ class OperatorFile
             throw new RuntimeException('could not encode operator: '. $exception->getMessage(), 0, $exception);
         }
 
-        static::doWrite(self::path($projectRoot), $json, 0600);
+        static::doWrite(static::path($projectRoot), $json, 0600);
     }
 
 
