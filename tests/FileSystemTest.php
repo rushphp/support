@@ -145,3 +145,80 @@ test('remove dir removes internal symlinks', function (): void {
     expect(file_exists($root))->toBeFalse()
         ->and(is_link($root .'/link'))->toBeFalse();
 });
+
+
+test('write reports temporary, chmod and rename failures', function (): void {
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$tempnamResult = false;
+
+    expect(fn () => FileSystemTestable::write('/virtual/file.txt', 'x'))
+        ->toThrow(RuntimeException::class, 'could not create temporary file');
+
+    FileSystemTestable::reset();
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$chmodResult = false;
+
+    expect(fn () => FileSystemTestable::write('/virtual/file.txt', 'x'))
+        ->toThrow(RuntimeException::class, 'could not chmod');
+
+    FileSystemTestable::reset();
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$renameResult = false;
+
+    expect(fn () => FileSystemTestable::write('/virtual/file.txt', 'x'))
+        ->toThrow(RuntimeException::class, 'could not move temporary file');
+});
+
+
+test('copyFile reports a missing source and a failed copy', function (): void {
+    FileSystemTestable::$isFile = false;
+
+    expect(fn () => FileSystemTestable::copyFile('/virtual/missing', '/virtual/out'))
+        ->toThrow(RuntimeException::class, 'missing file');
+
+    FileSystemTestable::reset();
+    FileSystemTestable::$isFile = true;
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$copyResult = false;
+
+    expect(fn () => FileSystemTestable::copyFile('/virtual/in', '/virtual/out'))
+        ->toThrow(RuntimeException::class, 'could not copy');
+});
+
+
+test('removeDir reports unlink and rmdir failures', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    mkdir($root, 0700, true);
+    file_put_contents($root .'/file.txt', 'x');
+
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$unlinkResult = false;
+
+    expect(fn () => FileSystemTestable::removeDir($root))
+        ->toThrow(RuntimeException::class, 'could not remove file');
+
+    FileSystem::removeDir($root);
+
+    mkdir($root .'/sub', 0700, true);
+    FileSystemTestable::reset();
+    FileSystemTestable::$isDir = true;
+    FileSystemTestable::$rmdirResult = false;
+
+    expect(fn () => FileSystemTestable::removeDir($root))
+        ->toThrow(RuntimeException::class, 'could not remove directory');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('tryDelete reports failure and treats a missing path as handled', function (): void {
+    FileSystemTestable::$isFile = true;
+    FileSystemTestable::$fileExists = true;
+    FileSystemTestable::$unlinkResult = false;
+
+    expect(FileSystemTestable::tryDelete('/virtual/file'))->toBeFalse();
+
+    FileSystemTestable::reset();
+
+    expect(FileSystemTestable::tryDelete('/virtual/missing'))->toBeTrue();
+});
