@@ -42,7 +42,7 @@
         "pestphp/pest": "^3.8"
     },
     "scripts": {
-        "stan": "phpstan analyse",
+        "stan": "@php vendor/bin/phpstan analyse -c phpstan.neon",
         "test": "pest"
     },
     "config": {
