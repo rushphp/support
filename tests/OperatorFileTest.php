@@ -117,3 +117,20 @@ test('exists reflects the file probe', function (): void {
 
     expect(OperatorFileTestable::exists('/virtual'))->toBeFalse();
 });
+
+
+test('save writes a private file and overwrites it', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    mkdir($root, 0700, true);
+
+    OperatorFile::save($root, new Operator('First', 'first@example.com'));
+    OperatorFile::save($root, new Operator('Second', 'second@example.com'));
+
+    $file = OperatorFile::path($root);
+
+    expect(file_get_contents($file))->toContain('Second')
+        ->and(substr(sprintf('%o', fileperms($file)), -4))->toBe('0600')
+        ->and(OperatorFile::load($root)->name)->toBe('Second');
+
+    FileSystem::removeDir($root);
+});

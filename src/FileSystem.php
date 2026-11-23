@@ -6,7 +6,7 @@ use ErrorException;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RuntimeException;
+use Rush\Support\Exception\FileSystemException;
 use SplFileInfo;
 use Throwable;
 
@@ -20,21 +20,21 @@ class FileSystem
         }
 
         if (static::doFileExists($path)) {
-            throw new RuntimeException("not a directory: {$path}");
+            throw new FileSystemException("not a directory: {$path}");
         }
 
         try {
             $created = static::guard(static fn () => static::doMkdir($path, $mode));
 
             if ($created !== true) {
-                throw new RuntimeException("could not create directory: {$path}");
+                throw new FileSystemException("could not create directory: {$path}");
             }
         } catch (Throwable $error) {
             if (static::doIsDir($path)) {
                 return;
             }
 
-            throw new RuntimeException("could not create directory: {$path}", 0, $error);
+            throw new FileSystemException("could not create directory: {$path}", 0, $error);
         }
     }
 
@@ -46,20 +46,20 @@ class FileSystem
         $temporary = static::guard(static fn () => static::doTempnam(dirname($path), '.rush-'));
 
         if ( ! is_string($temporary)) {
-            throw new RuntimeException("could not create temporary file for {$path}");
+            throw new FileSystemException("could not create temporary file for {$path}");
         }
 
         try {
             $written = static::guard(static fn () => static::doFilePutContents($temporary, $contents));
 
             if ($written === false) {
-                throw new RuntimeException("could not write file: {$path}");
+                throw new FileSystemException("could not write file: {$path}");
             }
 
             static::chmod($temporary, $mode);
 
             if ( ! static::guard(static fn () => static::doRename($temporary, $path))) {
-                throw new RuntimeException("could not move temporary file to {$path}");
+                throw new FileSystemException("could not move temporary file to {$path}");
             }
         } catch (Throwable $error) {
             static::tryDelete($temporary);
@@ -71,13 +71,13 @@ class FileSystem
     public static function copyFile(string $source, string $destination): void
     {
         if ( ! static::doIsFile($source)) {
-            throw new RuntimeException("missing file: {$source}");
+            throw new FileSystemException("missing file: {$source}");
         }
 
         static::ensureDirectory(dirname($destination));
 
         if ( ! static::guard(static fn () => static::doCopy($source, $destination))) {
-            throw new RuntimeException("could not copy {$source} to {$destination}");
+            throw new FileSystemException("could not copy {$source} to {$destination}");
         }
     }
 
@@ -91,7 +91,7 @@ class FileSystem
         $destination = rtrim($destination, '/');
 
         if ( ! static::doIsDir($source)) {
-            throw new RuntimeException("missing directory: {$source}");
+            throw new FileSystemException("missing directory: {$source}");
         }
 
         static::ensureDirectory($destination);
@@ -173,7 +173,7 @@ class FileSystem
 
             if ($item->isLink()) {
                 if ( ! static::guard(static fn () => static::doUnlink($item->getPathname()))) {
-                    throw new RuntimeException("could not remove link {$item->getPathname()}");
+                    throw new FileSystemException("could not remove link {$item->getPathname()}");
                 }
 
                 continue;
@@ -181,19 +181,19 @@ class FileSystem
 
             if ($item->isDir()) {
                 if ( ! static::guard(static fn () => static::doRmdir($item->getPathname()))) {
-                    throw new RuntimeException("could not remove directory {$item->getPathname()}");
+                    throw new FileSystemException("could not remove directory {$item->getPathname()}");
                 }
 
                 continue;
             }
 
             if ( ! static::guard(static fn () => static::doUnlink($item->getPathname()))) {
-                throw new RuntimeException("could not remove file {$item->getPathname()}");
+                throw new FileSystemException("could not remove file {$item->getPathname()}");
             }
         }
 
         if ( ! static::guard(static fn () => static::doRmdir($directory))) {
-            throw new RuntimeException("could not remove directory {$directory}");
+            throw new FileSystemException("could not remove directory {$directory}");
         }
     }
 
@@ -210,7 +210,7 @@ class FileSystem
         }
 
         if ( ! static::guard(static fn () => static::doUnlink($path))) {
-            throw new RuntimeException("could not delete {$path}");
+            throw new FileSystemException("could not delete {$path}");
         }
     }
 
@@ -230,7 +230,7 @@ class FileSystem
     public static function chmod(string $path, int $mode): void
     {
         if ( ! static::guard(static fn () => static::doChmod($path, $mode))) {
-            throw new RuntimeException("could not chmod {$path}");
+            throw new FileSystemException("could not chmod {$path}");
         }
     }
 

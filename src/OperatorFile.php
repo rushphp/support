@@ -3,7 +3,7 @@
 namespace Rush\Support;
 
 use JsonException;
-use RuntimeException;
+use Rush\Support\Exception\OperatorException;
 
 
 class OperatorFile
@@ -60,7 +60,7 @@ class OperatorFile
         $operator = static::read($projectRoot);
 
         if ($operator === null) {
-            throw new RuntimeException(
+            throw new OperatorException(
                 'operator not configured; run ./rush operator --name="..." --email="..."',
             );
         }
@@ -77,7 +77,7 @@ class OperatorFile
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
             ) ."\n";
         } catch (JsonException $exception) {
-            throw new RuntimeException('could not encode operator: '. $exception->getMessage(), 0, $exception);
+            throw new OperatorException('could not encode operator: '. $exception->getMessage(), 0, $exception);
         }
 
         static::doWrite(static::path($projectRoot), $json, 0600);

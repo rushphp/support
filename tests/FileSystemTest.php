@@ -222,3 +222,54 @@ test('tryDelete reports failure and treats a missing path as handled', function 
 
     expect(FileSystemTestable::tryDelete('/virtual/missing'))->toBeTrue();
 });
+
+
+test('temporaryDirectory creates a fresh directory', function (): void {
+    $directory = FileSystem::temporaryDirectory('rush-test-');
+
+    expect(is_dir($directory))->toBeTrue()
+        ->and(basename($directory))->toStartWith('rush-test-');
+
+    FileSystem::removeDir($directory);
+});
+
+
+test('chmod applies the given mode', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    $file = $root .'/file.txt';
+
+    FileSystem::write($file, 'x');
+    FileSystem::chmod($file, 0600);
+
+    expect(substr(sprintf('%o', fileperms($file)), -4))->toBe('0600');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('copyFile copies file contents', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    FileSystem::write($root .'/source.txt', 'content');
+
+    FileSystem::copyFile($root .'/source.txt', $root .'/nested/target.txt');
+
+    expect(file_get_contents($root .'/nested/target.txt'))->toBe('content');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('delete removes a file and a symlink', function (): void {
+    $root = sys_get_temp_dir() .'/rush-support-'. bin2hex(random_bytes(6));
+    mkdir($root, 0700, true);
+    file_put_contents($root .'/file.txt', 'x');
+    symlink($root .'/file.txt', $root .'/link');
+
+    FileSystem::delete($root .'/file.txt');
+    FileSystem::delete($root .'/link');
+
+    expect(file_exists($root .'/file.txt'))->toBeFalse()
+        ->and(is_link($root .'/link'))->toBeFalse();
+
+    FileSystem::removeDir($root);
+});
